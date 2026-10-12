@@ -423,6 +423,25 @@ func writeAppConfig(cfg appConfig) error {
 	return os.WriteFile(p, data, 0644)
 }
 
+// GetSkipDefenderCheck returns whether the mandatory Defender exclusion check
+// is disabled for D3D8/D3D9 patching.
+func (a *App) GetSkipDefenderCheck() bool {
+	return loadAppConfig().SkipDefenderCheck
+}
+
+// SetSkipDefenderCheck persists the skip flag into config.json and returns
+// whether the write succeeded.
+func (a *App) SetSkipDefenderCheck(skip bool) bool {
+	cfg := loadAppConfig()
+	cfg.SkipDefenderCheck = skip
+	if err := writeAppConfig(cfg); err != nil {
+		writeLog("SetSkipDefenderCheck: failed to write config.json: " + err.Error())
+		return false
+	}
+	writeLog(fmt.Sprintf("SetSkipDefenderCheck: skip_defender_check=%v", skip))
+	return true
+}
+
 // GpuInfo is the serializable GPU model returned to the frontend.
 type GpuInfo struct {
 	Name                    string `json:"name"`
@@ -581,6 +600,11 @@ type appConfig struct {
 	// renodx-dlss5.addon64) or "dfc" (Deep Fried Chicken trio). Old configs
 	// without the field fall back to "renodx".
 	NeuralConsumer string `json:"neural_consumer"`
+	// SkipDefenderCheck disables the mandatory Windows Defender exclusion
+	// check for D3D8/D3D9 patching. Default false keeps the original safe
+	// behavior; power users who run with Defender disabled can flip it in
+	// Settings. Old configs without the field fall back to false.
+	SkipDefenderCheck bool `json:"skip_defender_check"`
 }
 
 // defaultAppConfig returns the default config with dummy download URLs. Only
@@ -597,6 +621,9 @@ func defaultAppConfig() appConfig {
 		DgVoodooAPI:     "d3d11",
 		FeederURL:       "https://github.com/jlrouzies-fr/DLSS5-Feeder/releases/download/v0.13.1-beta.1/DLSS5-Feeder-0.13.1-beta.1.zip",
 		NeuralConsumer:  "renodx",
+		// Keep the mandatory exclusion check ON by default so the original
+		// safe behavior stays for everyone; only power users opt out.
+		SkipDefenderCheck: false,
 	}
 }
 
@@ -4992,13 +5019,19 @@ func (a *App) patchGameWithModeWithExe(gamePath string, mode string, preferExe s
 			if st, statErr := os.Stat(gameRoot); statErr == nil && !st.IsDir() {
 				gameRoot = filepath.Dir(gameRoot)
 			}
-			writeLog("PatchGameWithMode: D3D9 detected - ensuring Defender exclusion for " + gameRoot)
-			a.emitPatchStatus("Ensuring Windows Defender exclusion for the game folder...")
-			if exclErr := ensureDefenderExcluded(gameRoot); exclErr != nil {
-				writeLog("PatchGameWithMode: BLOCKED - game folder exclusion failed: " + exclErr.Error())
-				return PatchResult{
-					Success: false,
-					Message: "Patch blocked: the game folder must be excluded from Windows Defender first (dgVoodoo2 is quarantined otherwise). " + exclErr.Error(),
+			cfg := loadAppConfig()
+			if cfg.SkipDefenderCheck {
+				writeLog("PatchGameWithMode: D3D9 detected - skip_defender_check=true, skipping Defender exclusion enforcement")
+				a.emitPatchStatus("Skipping Defender exclusion check (skip_defender_check=true)...")
+			} else {
+				writeLog("PatchGameWithMode: D3D9 detected - ensuring Defender exclusion for " + gameRoot)
+				a.emitPatchStatus("Ensuring Windows Defender exclusion for the game folder...")
+				if exclErr := ensureDefenderExcluded(gameRoot); exclErr != nil {
+					writeLog("PatchGameWithMode: BLOCKED - game folder exclusion failed: " + exclErr.Error())
+					return PatchResult{
+						Success: false,
+						Message: "Patch blocked: the game folder must be excluded from Windows Defender first (dgVoodoo2 is quarantined otherwise). " + exclErr.Error(),
+					}
 				}
 			}
 			writeLog(fmt.Sprintf("PatchGameWithMode: D3D9 detected - installing dgVoodoo2 D3D9 -> %s bridge", dgvoodooOutputLabel()))

@@ -46,6 +46,10 @@ export function GetGameFolderPreview(arg1) {
   return window['go']['main']['App']['GetGameFolderPreview'](arg1);
 }
 
+export function GetSkipDefenderCheck() {
+  return window['go']['main']['App']['GetSkipDefenderCheck']();
+}
+
 export function GetSystemInfo() {
   return window['go']['main']['App']['GetSystemInfo']();
 }
@@ -128,6 +132,10 @@ export function SaveDownloadURLs(arg1) {
 
 export function SelectGPU(arg1) {
   return window['go']['main']['App']['SelectGPU'](arg1);
+}
+
+export function SetSkipDefenderCheck(arg1) {
+  return window['go']['main']['App']['SetSkipDefenderCheck'](arg1);
 }
 
 export function UninstallPatch(arg1) {

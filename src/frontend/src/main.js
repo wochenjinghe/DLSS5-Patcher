@@ -169,6 +169,13 @@ document.querySelector('#app').innerHTML = `
           <button id="excludeAppBtn" class="btn btn-primary btn-compact">Exclude App Folder</button>
         </div>
         <div id="defenderResult" class="settings-result"></div>
+        <div class="settings-row">
+          <label class="settings-label settings-inline-label" for="skipDefenderCheck">
+            <input type="checkbox" id="skipDefenderCheck" />
+            Skip exclusion check (not recommended)
+          </label>
+        </div>
+        <p class="settings-hint">Skip the mandatory game-folder Defender exclusion before patching D3D8/D3D9 games. The original author keeps this ON to protect beginners; only enable it if you know Defender is disabled on your system and you accept the quarantine risk.</p>
       </div>
     </div>
   </div>
@@ -1108,7 +1115,29 @@ async function openSettings() {
   const modal = settingsModal();
   if (!modal) return;
   modal.style.display = 'flex';
-  await Promise.all([loadSettingsUrls(), refreshDefenderStatus()]);
+  await Promise.all([loadSettingsUrls(), refreshDefenderStatus(), loadSkipDefenderCheck()]);
+}
+
+async function loadSkipDefenderCheck() {
+  const el = document.getElementById('skipDefenderCheck');
+  if (!el) return;
+  try {
+    el.checked = !!(await GetSkipDefenderCheck());
+  } catch (err) {
+    console.error('Failed to load skip_defender_check:', err);
+  }
+}
+
+async function handleSkipDefenderCheckChange() {
+  const el = document.getElementById('skipDefenderCheck');
+  if (!el) return;
+  try {
+    const ok = await SetSkipDefenderCheck(el.checked);
+    if (!ok) el.checked = !el.checked; // roll back on write failure
+  } catch (err) {
+    el.checked = !el.checked;
+    console.error('Failed to save skip_defender_check:', err);
+  }
 }
 
 function closeSettings() {
@@ -1284,6 +1313,7 @@ async function handleExcludeGame() {
 // offer a one-click exclusion dialog. Shown every launch until excluded.
 async function checkDefenderOnStartup() {
   try {
+    if (await GetSkipDefenderCheck()) return; // power user opted out of exclusion check
     const st = await GetDefenderStatus();
     if (!st) return;
     const excluded = !!(st.excluded ?? st.Excluded);
@@ -1406,4 +1436,5 @@ loadGames();
 loadVersion();
 loadGpuInfo();
 setupGpuControls();
+document.getElementById('skipDefenderCheck')?.addEventListener('change', handleSkipDefenderCheckChange);
 checkDefenderOnStartup();

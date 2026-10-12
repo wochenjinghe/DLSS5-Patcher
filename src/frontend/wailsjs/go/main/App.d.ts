@@ -24,6 +24,8 @@ export function GetGameDetailsForExe(arg1:string,arg2:string):Promise<main.GameD
 
 export function GetGameFolderPreview(arg1:string):Promise<main.GameInfo>;
 
+export function GetSkipDefenderCheck():Promise<boolean>;
+
 export function GetSystemInfo():Promise<Record<string, string>>;
 
 export function Greet(arg1:string):Promise<string>;
@@ -65,6 +67,8 @@ export function RepairInstallForExe(arg1:string,arg2:string):Promise<main.Verify
 export function SaveDownloadURLs(arg1:main.DownloadURLs):Promise<main.PatchResult>;
 
 export function SelectGPU(arg1:string):Promise<main.GpuInfo>;
+
+export function SetSkipDefenderCheck(arg1:boolean):Promise<boolean>;
 
 export function UninstallPatch(arg1:string):Promise<main.PatchResult>;
 
