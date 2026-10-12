@@ -1406,4 +1406,4 @@ loadGames();
 loadVersion();
 loadGpuInfo();
 setupGpuControls();
-checkDefenderOnStartup();
+// checkDefenderOnStartup(); // disabled in custom build - no AV exclusion enforcement

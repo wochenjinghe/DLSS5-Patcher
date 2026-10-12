@@ -4992,15 +4992,8 @@ func (a *App) patchGameWithModeWithExe(gamePath string, mode string, preferExe s
 			if st, statErr := os.Stat(gameRoot); statErr == nil && !st.IsDir() {
 				gameRoot = filepath.Dir(gameRoot)
 			}
-			writeLog("PatchGameWithMode: D3D9 detected - ensuring Defender exclusion for " + gameRoot)
-			a.emitPatchStatus("Ensuring Windows Defender exclusion for the game folder...")
-			if exclErr := ensureDefenderExcluded(gameRoot); exclErr != nil {
-				writeLog("PatchGameWithMode: BLOCKED - game folder exclusion failed: " + exclErr.Error())
-				return PatchResult{
-					Success: false,
-					Message: "Patch blocked: the game folder must be excluded from Windows Defender first (dgVoodoo2 is quarantined otherwise). " + exclErr.Error(),
-				}
-			}
+			writeLog("PatchGameWithMode: D3D9 detected - skipping Defender exclusion enforcement (custom build, no AV check)")
+			a.emitPatchStatus("Skipping Defender exclusion (custom build)...")
 			writeLog(fmt.Sprintf("PatchGameWithMode: D3D9 detected - installing dgVoodoo2 D3D9 -> %s bridge", dgvoodooOutputLabel()))
 			a.emitPatchStatus(fmt.Sprintf("D3D9 detected - installing dgVoodoo2 bridge (D3D9 -> %s)...", dgvoodooOutputLabel()))
 			dgvResult := a.installDgVoodooWithExe(gamePath, preferExe)
