@@ -28,6 +28,8 @@ export function GetSkipDefenderCheck():Promise<boolean>;
 
 export function GetSystemInfo():Promise<Record<string, string>>;
 
+export function GetSystemLanguage():Promise<string>;
+
 export function Greet(arg1:string):Promise<string>;
 
 export function InstallDLSS5(arg1:string):Promise<main.PatchResult>;

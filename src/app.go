@@ -423,6 +423,27 @@ func writeAppConfig(cfg appConfig) error {
 	return os.WriteFile(p, data, 0644)
 }
 
+// GetSystemLanguage returns the Windows display language as a BCP-47 tag
+// (e.g. "zh-CN", "en-US"). The frontend i18n auto-detection prefers this over
+// navigator.language because WebView2 does not always mirror the OS language.
+func (a *App) GetSystemLanguage() string {
+	modKernel32 := syscall.NewLazyDLL("kernel32.dll")
+	procGetUserDefaultLocaleName := modKernel32.NewProc("GetUserDefaultLocaleName")
+	var buf [85]uint16
+	ret, _, _ := procGetUserDefaultLocaleName.Call(
+		uintptr(unsafe.Pointer(&buf[0])),
+		uintptr(len(buf)),
+	)
+	if ret == 0 {
+		return "en"
+	}
+	tag := strings.TrimRight(syscall.UTF16ToString(buf[:]), "\x00")
+	if tag == "" {
+		return "en"
+	}
+	return tag
+}
+
 // GetSkipDefenderCheck returns whether the mandatory Defender exclusion check
 // is disabled for D3D8/D3D9 patching.
 func (a *App) GetSkipDefenderCheck() bool {

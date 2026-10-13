@@ -54,6 +54,10 @@ export function GetSystemInfo() {
   return window['go']['main']['App']['GetSystemInfo']();
 }
 
+export function GetSystemLanguage() {
+  return window['go']['main']['App']['GetSystemLanguage']();
+}
+
 export function Greet(arg1) {
   return window['go']['main']['App']['Greet'](arg1);
 }
